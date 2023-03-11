@@ -1,0 +1,9 @@
+{
+  "env": {
+    "DB_USER": "rodcdev",
+    "DB_PASSWORD": "8dGanRlZIJzwP3m3",
+    "DB_NAME": "mern",
+    "LOCATION_API_KEY": "pk.dcadf4b0f96151794eb1a772446a3b54",
+    "JWT_KEY": "supersecret_never_share"
+  }
+}
