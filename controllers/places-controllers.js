@@ -10,6 +10,23 @@ const Place = require("../models/place");
 const User = require("../models/user");
 const fileDelete = require("../utils/file-delete");
 
+const getAllPlaces = async (req, res, next) => {
+  let places;
+
+  try {
+    places = await Place.find({});
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching places failed, please try again later.",
+      500
+    );
+    return next(error);
+  }
+  res.json({
+    places: places.map((place) => place.toObject({ getters: true })),
+  });
+};
+
 const getPlaceById = async (req, res, next) => {
   const placeId = req.params.pid;
 
@@ -57,6 +74,13 @@ const getPlacesByUserId = async (req, res, next) => {
 
 const createPlace = async (req, res, next) => {
   const errors = validationResult(req);
+  let user;
+
+  try {
+    user = await User.findById(req.userData.userId);
+  } catch (err) {
+    return next(new HttpError("Creating place failed, please try again", 500));
+  }
 
   if (!errors.isEmpty()) {
     return next(
@@ -76,19 +100,15 @@ const createPlace = async (req, res, next) => {
   const placeToCreate = new Place({
     title,
     description,
+    image: req.file.location,
     address,
     location: coordinates,
-    image: req.file.location,
+    creatorName: user.name,
+    creatorImage: user.image,
+    likes: [],
+    comments: [],
     creator: req.userData.userId,
   });
-
-  let user;
-
-  try {
-    user = await User.findById(req.userData.userId);
-  } catch (err) {
-    return next(new HttpError("Creating place failed, please try again", 500));
-  }
 
   if (!user) {
     return next(new HttpError("Could not find user for provided id", 404));
@@ -129,11 +149,6 @@ const updatePlace = async (req, res, next) => {
       new HttpError("Could not update place with the provided ID", 500)
     );
   }
-
-  console.log("place creator: ", place.creator);
-  console.log("place creator: ", typeof place.creator);
-  console.log("req.userData.userId : ", req.userData.userId);
-  console.log("req.userData.userId : ", typeof req.userData.userId);
 
   if (place.creator.toString() !== req.userData.userId) {
     return next(new HttpError("You are not allowed to edit this place", 401));
@@ -194,8 +209,49 @@ const deletePlace = async (req, res, next) => {
   res.status(200).json({ message: "Deleted place" });
 };
 
+const handleLikeAdd = async (req, res, next) => {
+  const placeId = req.params.pid;
+
+  let user = req.userData.userId;
+  let place;
+  let isLiked;
+
+  try {
+    place = await Place.findById(placeId);
+  } catch (err) {
+    return next(new HttpError("Creating place failed, please try again", 500));
+  }
+
+  try {
+    if (place.likes.length > 0) {
+      place.likes.map((like) => {
+        if (like.toString() !== req.userData.userId) {
+          place.likes.push(user);
+          place.save();
+          isLiked = true;
+        } else {
+          place.likes.remove(user);
+          place.save();
+          isLiked = false;
+        }
+      });
+    } else {
+      place.likes.push(user);
+      place.save();
+      isLiked = true;
+    }
+  } catch (err) {}
+
+  res.status(201).json({ isLiked: isLiked, likesNumber: place.likes.length, user: user });
+};
+
+const handleComment = async (req, res, next) => {};
+
 exports.getPlaceById = getPlaceById;
 exports.getPlacesByUserId = getPlacesByUserId;
 exports.createPlace = createPlace;
 exports.updatePlace = updatePlace;
 exports.deletePlace = deletePlace;
+exports.getAllPlaces = getAllPlaces;
+exports.handleLikeAdd = handleLikeAdd;
+exports.handleComment = handleComment;
