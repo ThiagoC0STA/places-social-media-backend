@@ -223,26 +223,29 @@ const handleLikeAdd = async (req, res, next) => {
   }
 
   try {
-    if (place.likes.length > 0) {
+    if (place.likes.length !== 0) {
       place.likes.map((like) => {
-        if (like.toString() !== req.userData.userId) {
-          place.likes.push(user);
-          place.save();
+        if (req.userData.userId && like.toString() !== req.userData.userId) {
           isLiked = true;
         } else {
-          place.likes.remove(user);
-          place.save();
           isLiked = false;
         }
       });
     } else {
-      place.likes.push(user);
-      place.save();
       isLiked = true;
     }
+
+    if (isLiked === true) {
+      place.likes.push(user);
+    } else {
+      place.likes.remove(user);
+    }
+    place.save();
   } catch (err) {}
 
-  res.status(201).json({ isLiked: isLiked, likesNumber: place.likes.length, user: user });
+  res
+    .status(201)
+    .json({ isLiked: isLiked, likesNumber: place.likes.length, user: user });
 };
 
 const handleComment = async (req, res, next) => {};
