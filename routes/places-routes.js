@@ -16,6 +16,7 @@ router.get("/", placesControllers.getAllPlaces);
 router.use(checkAuth);
 
 router.patch("/likes/:pid", placesControllers.handleLikeAdd);
+
 router.patch("/comments/:pid", placesControllers.handleComment);
 
 router.post(

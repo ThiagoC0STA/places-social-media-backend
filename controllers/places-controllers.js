@@ -51,6 +51,7 @@ const getPlaceById = async (req, res, next) => {
 const getPlacesByUserId = async (req, res, next) => {
   const userId = req.params.uid;
   let userWithPlaces;
+
   try {
     userWithPlaces = await User.findById(userId).populate("places");
   } catch (err) {
@@ -210,9 +211,9 @@ const deletePlace = async (req, res, next) => {
 };
 
 const handleLikeAdd = async (req, res, next) => {
-  const placeId = req.params.pid;
+  const placeId = await req.params.pid;
+  let user = await req.userData.userId;
 
-  let user = req.userData.userId;
   let place;
   let isLiked;
 
@@ -223,24 +224,22 @@ const handleLikeAdd = async (req, res, next) => {
   }
 
   try {
-    if (place.likes.length !== 0) {
+    if (place.likes.length > 0) {
       place.likes.map((like) => {
         if (req.userData.userId && like.toString() !== req.userData.userId) {
           isLiked = true;
+          place.likes.push(user);
         } else {
           isLiked = false;
+          place.likes.remove(user);
         }
       });
     } else {
       isLiked = true;
+      place.likes.push(user);
     }
 
-    if (isLiked === true) {
-      place.likes.push(user);
-    } else {
-      place.likes.remove(user);
-    }
-    place.save();
+    await place.save();
   } catch (err) {}
 
   res
