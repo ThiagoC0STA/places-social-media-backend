@@ -8,16 +8,14 @@ const checkAuth = require("../middleware/check-auth");
 const router = express.Router();
 
 router.get("/:pid", placesControllers.getPlaceById);
-
 router.get("/user/:uid", placesControllers.getPlacesByUserId);
-
 router.get("/", placesControllers.getAllPlaces);
 
 router.use(checkAuth);
 
 router.patch("/likes/:pid", placesControllers.handleLikeAdd);
-
-router.patch("/comments/:pid", placesControllers.handleComment);
+router.post("/comments/:pid", placesControllers.createComment);
+router.delete("/comments/:pid", placesControllers.deleteComment);
 
 router.post(
   "/",

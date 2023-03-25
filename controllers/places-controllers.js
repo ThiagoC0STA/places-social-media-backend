@@ -213,7 +213,6 @@ const deletePlace = async (req, res, next) => {
 const handleLikeAdd = async (req, res, next) => {
   const placeId = await req.params.pid;
   let user = await req.userData.userId;
-
   let place;
   let isLiked;
 
@@ -247,7 +246,76 @@ const handleLikeAdd = async (req, res, next) => {
     .json({ isLiked: isLiked, likesNumber: place.likes.length, user: user });
 };
 
-const handleComment = async (req, res, next) => {};
+const createComment = async (req, res, next) => {
+  const { comment } = req.body;
+  let user = await req.userData.userId;
+  const placeId = await req.params.pid;
+
+  if (!comment || !user || !placeId) {
+    return next(new HttpError("Comment is missing in request body", 400));
+  }
+
+  let place;
+
+  try {
+    user = await User.findById(req.userData.userId);
+  } catch (err) {
+    return next(new HttpError("Creating place failed, please try again", 500));
+  }
+
+  let commentToCreate = {
+    user: user.name,
+    comment: comment,
+    userId: user._id,
+  };
+
+  console.log(user._id)
+
+  try {
+    place = await Place.findById(placeId);
+    place.comments.push(commentToCreate);
+    await place.save();
+  } catch (err) {
+    return next(
+      new HttpError("Comment creation failed, please try againnnn", 500)
+    );
+  }
+
+  res.status(201).json({ place: place });
+};
+
+const deleteComment = async (req, res, next) => {
+  const { comment } = req.body;
+  let user = await req.userData.userId;
+  const placeId = await req.params.pid;
+
+  if (!comment || !user || !placeId) {
+    return next(new HttpError("Comment removal failed", 400));
+  }
+
+  let place;
+
+  try {
+    user = await User.findById(req.userData.userId);
+  } catch (err) {
+    return next(new HttpError("Comment removal failed", 500));
+  }
+
+  try {
+    place = await Place.findById(placeId);
+
+    if (!place) {
+      throw new Error("Place not found");
+    }
+
+    place.comments.pull({ _id: comment });
+    await place.save();
+  } catch (err) {
+    return next(new HttpError("Comment removal failed", 500));
+  }
+
+  res.status(200).json({ place: place });
+};
 
 exports.getPlaceById = getPlaceById;
 exports.getPlacesByUserId = getPlacesByUserId;
@@ -256,4 +324,5 @@ exports.updatePlace = updatePlace;
 exports.deletePlace = deletePlace;
 exports.getAllPlaces = getAllPlaces;
 exports.handleLikeAdd = handleLikeAdd;
-exports.handleComment = handleComment;
+exports.createComment = createComment;
+exports.deleteComment = deleteComment;

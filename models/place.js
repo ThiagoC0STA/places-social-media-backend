@@ -16,8 +16,11 @@ const placeSchema = new Schema({
   creatorImage: { type: String, required: true },
   likes: [{ type: mongoose.Types.ObjectId, required: true }],
   comments: [
-    { type: mongoose.Types.ObjectId, required: true },
-    { type: Object, required: true },
+    {
+      user: { type: String, required: true },
+      comment: { type: String, required: true },
+      userId: { type: mongoose.Types.ObjectId, required: true },
+    },
   ],
   creator: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
 });
