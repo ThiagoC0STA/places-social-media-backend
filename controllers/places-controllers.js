@@ -213,6 +213,7 @@ const deletePlace = async (req, res, next) => {
 const handleLikeAdd = async (req, res, next) => {
   const placeId = await req.params.pid;
   let user = await req.userData.userId;
+
   let place;
   let isLiked;
 
@@ -222,17 +223,17 @@ const handleLikeAdd = async (req, res, next) => {
     return next(new HttpError("Creating place failed, please try again", 500));
   }
 
+  const alreadyLiked = place.likes.filter((like) => like == user);
+
   try {
     if (place.likes.length > 0) {
-      place.likes.map((like) => {
-        if (req.userData.userId && like.toString() !== req.userData.userId) {
-          isLiked = true;
-          place.likes.push(user);
-        } else {
-          isLiked = false;
-          place.likes.remove(user);
-        }
-      });
+      if (alreadyLiked.length > 0) {
+        isLiked = false;
+        place.likes.remove(user);
+      } else {
+        isLiked = true;
+        place.likes.push(user);
+      }
     } else {
       isLiked = true;
       place.likes.push(user);
@@ -269,7 +270,7 @@ const createComment = async (req, res, next) => {
     userId: user._id,
   };
 
-  console.log(user._id)
+  console.log(user._id);
 
   try {
     place = await Place.findById(placeId);
